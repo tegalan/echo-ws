@@ -6,40 +6,94 @@
   <title>WebSocket</title>
 </head>
 
-<body>
-  <p id="output"></p>
-
-  <script>
-    var loc = window.location;
-    var uri = 'ws:';
-
-    if (loc.protocol === 'https:') {
-      uri = 'wss:';
-    }
-    uri += '//' + loc.host;
-    uri += '/ws';
-
-    ws = new WebSocket(uri)
-
-    ws.onopen = function() {
-      console.log('Connected')
-
-      ws.onmessage = function(evt) {
-        //   var out = document.getElementById('output');
-        //   out.innerHTML += evt.data + '<br>';
-            console.log("onMessage:", evt.data)
-        }
-    }
-
+<body style="height: 100vh; padding: 0; margin: 0; background-color: aqua">
+  <div id="container" style="display: flex; flex: 1; flex-direction: column; height: 100%;">
     
+    <div id="output" style="flex: 1; background-color:ivory; height: 100%; padding: 20px">
+    
+    </div>
+    
+    <form id="input-form" action="" method="post" style="display: flex; padding: 5px">
+      <input type="text" name="input" id="input" style="flex: 1; height: 100%;">
+      <input type="submit" value="Send">
+    </form>
+  
+  </div>
+  
 
-    ws.onclose = function() {
-        console.log("Disconnected!")
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <script type="text/javascript">
+    var ws
+    var sender = prompt("enter Nick Name")
+
+    function connect() {
+      var loc = window.location;
+      var uri = 'ws:';
+
+      if (loc.protocol === 'https:') {
+        uri = 'wss:';
+      }
+
+      uri += '//' + loc.host;
+      uri += '/ws';
+
+      ws = new WebSocket(uri)
+
+      ws.onopen = function() {
+        console.log('Connected')
+
+        ws.onmessage = function(evt) {
+          var data = JSON.parse(evt.data)
+          console.log(data)
+
+          if(!data.body.from) {
+            $("#output").append("<p><strong>System:</strong>"+data.body+"</p>")  
+            return 
+          }
+
+          if(data.body.from != sender) {
+            $("#output").append("<p><strong>"+data.body.from+":</strong>"+data.body.msg+"</p>")   
+          } 
+        }
+      }
+
+      ws.onclose = function(e) {
+        console.log('Socket is closed. Reconnect will be attempted in 3 second.', e.reason);
+        setTimeout(function() {
+          connect();
+        }, 3000);
+      }
+
+      ws.onerror = function(err) {
+        console.error('Socket encountered error: ', err.message, 'Closing socket');
+        ws.close();
+      };
     }
 
-    // setInterval(function() {
-    //   ws.send('Hello, Server!');
-    // }, 1000);
+    connect()
+
+    $("#input-form").submit(function(e) {
+      var msg = $("#input").val()
+
+      if (msg !== "") {
+        console.log("Send message", msg)
+        $("#output").append("<p style='text-align: end'><strong>"+sender+":</strong>"+msg+"</p>") 
+
+        ws.send(JSON.stringify({
+          type:"message",
+          body: {
+            from: sender,
+            msg: msg
+          }
+        }))
+        $("#input").val("")
+        e.preventDefault()
+      } else {
+        alert("Message cannot empty!")
+      }
+    })
+
   </script>
 </body>
 

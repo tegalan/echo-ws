@@ -35,7 +35,7 @@ func (a *App) Initialize() {
 func (a *App) InitRouter() {
 	e := a.Echo
 
-	e.File("/ws-client", "public/ws.html")
+	e.File("/", "public/ws.html")
 	e.GET("/ping", a.Ping)
 	e.GET("/ws", a.WSHandler)
 }
