@@ -19,7 +19,6 @@ func main() {
 
 	log.SetFlags(0)
 	log.SetOutput(new(logWriter))
-	log.Println("This is something being logged!")
 
 	app.Initialize()
 
