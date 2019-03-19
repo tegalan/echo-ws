@@ -22,7 +22,9 @@ func (a *App) Initialize() {
 
 	a.hub = ws.NewHub()
 
-	e.Use(middleware.Logger())
+	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
+		Format: "${time_rfc3339} ${method}: ${uri}, ${status}\n",
+	}))
 	e.Use(middleware.Recover())
 
 	a.InitRouter()

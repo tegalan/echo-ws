@@ -1,7 +1,6 @@
 package ws
 
 import (
-	"bytes"
 	"log"
 	"time"
 
@@ -20,7 +19,7 @@ const (
 type Client struct {
 	Hub  *Hub
 	Conn *websocket.Conn
-	Send chan []byte
+	Send chan Message
 }
 
 func (c *Client) Read() {
@@ -32,24 +31,33 @@ func (c *Client) Read() {
 	c.Conn.SetReadLimit(maxMessageSize)
 	c.Conn.SetReadDeadline(time.Now().Add(pongWait))
 	c.Conn.SetPongHandler(func(string) error {
-		log.Println("Client send Pong!")
+		// log.Println("Client send Pong!")
 		c.Conn.SetReadDeadline(time.Now().Add(pongWait))
 		return nil
 	})
 
 	for {
-		_, message, err := c.Conn.ReadMessage()
+		message := Message{}
+		err := c.Conn.ReadJSON(&message)
+
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				log.Printf("Client error: %v", err)
+				log.Printf("WS: Client error: %v", err)
+
+				break
 			}
 
-			break
+			if websocket.IsCloseError(err, websocket.CloseGoingAway) {
+				log.Printf("WS: Client error: %v", err)
+
+				break
+			}
+
+			log.Printf("WS: Read message error: %v", err)
+			continue
 		}
 
-		log.Printf("New incoming message: %s", message)
-
-		message = bytes.TrimSpace(bytes.Replace(message, []byte("\n"), []byte(" "), -1))
+		// log.Printf("New incoming message: %s", message)
 		c.Hub.Broadcast <- message
 	}
 }
@@ -72,11 +80,11 @@ func (c *Client) Write() {
 				return
 			}
 
-			c.Conn.WriteMessage(websocket.TextMessage, message)
+			c.Conn.WriteJSON(message)
 		case <-ticker.C:
 			c.Conn.SetWriteDeadline(time.Now().Add(writeWait))
 			if err := c.Conn.WriteMessage(websocket.PingMessage, nil); err != nil {
-				log.Printf("Client error send ping: %v", err)
+				log.Printf("Client error send pi g: %v", err)
 				return
 			}
 		}

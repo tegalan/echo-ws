@@ -19,7 +19,7 @@ func (a *App) WSHandler(c echo.Context) error {
 	client := &ws.Client{
 		Hub:  a.hub,
 		Conn: conn,
-		Send: make(chan []byte, 256),
+		Send: make(chan ws.Message, 256),
 	}
 
 	a.hub.Register <- client

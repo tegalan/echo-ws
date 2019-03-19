@@ -6,7 +6,7 @@ import "log"
 type Hub struct {
 	Clients map[*Client]bool
 
-	Broadcast chan []byte
+	Broadcast chan Message
 
 	Register   chan *Client
 	Unregister chan *Client
@@ -15,7 +15,7 @@ type Hub struct {
 // NewHub ...
 func NewHub() *Hub {
 	return &Hub{
-		Broadcast:  make(chan []byte),
+		Broadcast:  make(chan Message),
 		Register:   make(chan *Client),
 		Unregister: make(chan *Client),
 		Clients:    make(map[*Client]bool),
@@ -29,7 +29,7 @@ func (h *Hub) Run() {
 		select {
 		case client := <-h.Register:
 			h.Clients[client] = true
-			log.Println("Client connected!")
+			// log.Println("Client connected!")
 		case client := <-h.Unregister:
 			if _, ok := h.Clients[client]; ok {
 				// Delete from array
@@ -37,13 +37,13 @@ func (h *Hub) Run() {
 				// Close channel
 				close(client.Send)
 
-				log.Println("Client disconnected!")
+				// log.Println("Client disconnected!")
 			}
 		case message := <-h.Broadcast:
 			for client := range h.Clients {
 				select {
 				case client.Send <- message:
-					log.Printf("Broadcast message: %s", message)
+					// log.Printf("Broadcast message: %s", message)
 				default:
 					close(client.Send)
 					delete(h.Clients, client)
